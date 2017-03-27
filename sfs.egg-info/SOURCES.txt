@@ -1,0 +1,4 @@
+sfs.egg-info/PKG-INFO
+sfs.egg-info/SOURCES.txt
+sfs.egg-info/dependency_links.txt
+sfs.egg-info/top_level.txt
