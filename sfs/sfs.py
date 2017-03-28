@@ -145,7 +145,51 @@ class Sfs(np.ndarray):
 
 		return numerator/denominator
 
-	def f_st(self):
+	def f_st(self, weighted = True):
+		"""
+		Weighted and unweighted F_st according to ANGSD
+		"""
+
+		if self.npops != 2:
+			raise ValueError("F_st only makes sense for >= 2 populations.")
+
+		N1, N2 = [ x-1 for x in self.shape ]
+
+		est0 = self[:]
+		est0[0,0] = 0
+		est0[N1,N2] = 0
+		est0 = est0/np.sum(est0)
+
+		aMat = np.full((N1+1,N2+1), np.nan)
+		baMat = np.full((N1+1,N2+1), np.nan)
+		for a1 in range(0, N1+1):
+			for a2 in range(0, N2+1):
+				p1 = a1/N1
+				p2 = a2/N2
+				q1 = 1 - p1
+				q2 = 1 - p2
+				alpha1 = 1 - (p1**2 + q1**2)
+				alpha2 = 1 - (p2**2 + q2**2)
+
+				al = 1.0/2 * ( (p1-p2)**2 + (q1-q2)**2) - (N1+N2) *  (N1*alpha1 + N2*alpha2) / (4*N1*N2*(N1+N2-1))
+				bal = 1.0/2 * ( (p1-p2)**2 + (q1-q2)**2) + (4*N1*N2-N1-N2)*(N1*alpha1 + N2*alpha2) / (4*N1*N2*(N1+N2-1))
+				aMat[a1,a2] = al
+				baMat[a1,a2] = bal
+
+		## unweighted average of single-locus ratio estimators
+		gamma = est0*(aMat/baMat)
+		fstU  = np.sum(gamma[ np.isfinite(gamma)  ])
+		## weighted average of single-locus ratio estimators
+		num = est0*aMat
+		denom = est0*baMat
+		fstW = np.sum(num[ np.isfinite(num) ])/np.sum(denom[ np.isfinite(denom) ])
+		#print(fstW, fstU, self._old_f_st())
+		if weighted:
+			return fstW
+		else:
+			return fstU
+
+	def _old_f_st(self):
 		"""
 		Weir & Cockerham's (1984) F_st estimator
 		"""
